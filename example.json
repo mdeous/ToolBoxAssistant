@@ -1,0 +1,33 @@
+{
+  "path": "/tmp/toolbox-example",
+  "apps": {
+    "sqlmap": {
+      "type": "git",
+      "url": "https://github.com/sqlmapproject/sqlmap",
+      "path": "web/sqlmap"
+    },
+    "androguard": {
+      "type": "hg",
+      "url": "https://code.google.com/p/androguard/",
+      "path": "mobility/androguard"
+    },
+    "skipfish": {
+      "type": "svn",
+      "url": "http://skipfish.googlecode.com/svn/trunk/",
+      "path": "web/skipfish",
+      "build": [
+        "make"
+      ]
+    },
+    "radare": {
+      "type": "archive",
+      "url": "https://github.com/radare/radare2/archive/master.zip",
+      "path": "re/radare",
+      "build": [
+        "bash configure",
+        "chmod +x configure-plugins",
+        "make"
+      ]
+    }
+  }
+}
