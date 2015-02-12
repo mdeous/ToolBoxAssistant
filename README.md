@@ -47,7 +47,7 @@ NOT IMPLEMENTED YET
 
 NOT IMPLEMENTED YET
 
-### The `toolbox.json` file
+## The `toolbox.json` file
 
 The following JSON example shows all the specifications that can be defined within the `toolbox.json` file:
 
