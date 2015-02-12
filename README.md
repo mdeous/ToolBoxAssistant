@@ -7,8 +7,6 @@ An utility to easily manage your toolbox applications.
 ToolBoxAssistant works by reading a JSON file containing the toolbox location and applications information.
 By default it searches for a `toolbox.json` in the current directory.
 
-For an example JSON file containing all the possible keys and values it can contain, see the `example.json` file.
-
 ## Installation
 
 ### From source
@@ -48,6 +46,47 @@ NOT IMPLEMENTED YET
 ### genspec
 
 NOT IMPLEMENTED YET
+
+### The `toolbox.json` file
+
+The following JSON example shows all the specifications that can be defined within the `toolbox.json` file:
+
+```javascript
+{
+  "path": "/tmp/toolbox-example",
+  "apps": {
+    "sqlmap": {
+      "type": "git",
+      "url": "https://github.com/sqlmapproject/sqlmap",
+      "path": "web/sqlmap"
+    },
+    "androguard": {
+      "type": "hg",
+      "url": "https://code.google.com/p/androguard/",
+      "path": "mobility/androguard"
+    },
+    "skipfish": {
+      "type": "svn",
+      "url": "http://skipfish.googlecode.com/svn/trunk/",
+      "path": "web/skipfish",
+      "build": [
+        "make"
+      ]
+    },
+    "radare": {
+      "type": "archive",
+      "url": "https://github.com/radare/radare2/archive/master.zip",
+      "path": "re/radare",
+      "build": [
+        "bash configure",
+        "chmod +x configure-plugins",
+        "make"
+      ]
+    }
+  }
+}
+
+```
 
 ## License
 
