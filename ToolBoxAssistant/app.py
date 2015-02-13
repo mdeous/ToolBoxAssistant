@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import shlex
+import tarfile
 from subprocess import Popen, PIPE
-from tarfile import TarFile
 from tempfile import gettempdir
 from urllib2 import urlopen
 from zipfile import ZipFile
@@ -22,8 +22,10 @@ class App(object):
         self.path = specs['path']
         self.unnest = specs.get('unnest', False)
         self.build_commands = specs.get('build')
+        self.is_updated = False
 
     def _log_exception(self, message):
+        message = message if message else 'an unknown error occured'
         for line in str(message).splitlines():
             self.tba.log.error(line)
 
@@ -37,6 +39,8 @@ class App(object):
         if p.returncode != 0:
             self._log_exception(stderr)
             return False
+        if stderr:
+            self._log_exception(stderr)  # TODO: display this as WARNING, not ERROR
         return True
 
     def sync(self):
@@ -45,13 +49,8 @@ class App(object):
             self.tba.log.info('downloading %s' % self.name)
             op_ok = self.download()
         else:
-            if isinstance(self, VersionedApp):
-                self.tba.log.info('updating %s' % self.name)
-                op_ok = self.update()
-            else:
-                self.tba.log.warning(
-                    '%s is not versionned, check for new version and update specfile' % self.name
-                )
+            self.tba.log.info('updating %s' % self.name)
+            op_ok = self.update()
         if op_ok:
             unnest_dir(self.path)
 
@@ -80,11 +79,29 @@ class ArchiveApp(App):
     """
     archive_handlers = {
         'zip': ZipFile,
-        'tar': TarFile,
-        'tar.gz': TarFile,
-        'tar.bz2': TarFile,
-        'tgz': TarFile
+        'tar': tarfile.open,
+        'tar.gz': tarfile.open,
+        'tar.bz2': tarfile.open,
     }
+
+    def read_version(self):
+        version_file = os.path.join(self.tba.config_dir, self.name)
+        if not os.path.exists(version_file):
+            return None
+        with open(version_file) as ifile:
+            version = ifile.read().strip()
+        return version
+
+    def store_version(self):
+        version_file = os.path.join(self.tba.config_dir, self.name)
+        with open(version_file, 'w') as ofile:
+            ofile.write(self.url.split('/')[-1].split('?')[0])
+
+    def build(self):
+        op_ok = super(ArchiveApp, self).build()
+        if op_ok:
+            self.store_version()
+        return op_ok
 
     def download(self):
         fname = self.url.split('/')[-1].split('?')[0]
@@ -105,13 +122,20 @@ class ArchiveApp(App):
         if handler is None:
             self.tba.log.error('unsupported archive for application %s' % self.name)
             return False
-        archive = handler(temppath)
+        mode = 'r'
+        archive_type = fname.split('.')[-1]
+        if archive_type in ('gz', 'bz2'):
+            mode = 'r:%s' % archive_type
+        archive = handler(temppath, mode=mode)
         archive.extractall(self.path)
         os.remove(temppath)
+        self.is_updated = True
         return True
 
     def update(self):
-        return True
+        if self.read_version() == self.url.split('/')[-1].split('?')[0]:
+            return True
+        return self.download()
 
 
 class VersionedApp(App):
@@ -150,6 +174,7 @@ class VersionedApp(App):
                 op_ok = self._run_command(cmd)
                 if not op_ok:
                     break
+        self.is_updated = op_ok  # TODO: check if some changes have been pulled
         return op_ok
 
 

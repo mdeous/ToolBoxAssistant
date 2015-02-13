@@ -83,7 +83,7 @@ class ToolBoxAssistant(object):
                 app_specs['path'] = os.path.join(rootpath, app_specs['path'])
             app = AppFactory.load(tba, app_name, app_specs)
             app.sync()
-            if isinstance(app, VersionedApp):
+            if app.is_updated:
                 app.build()
 
     def do_check(self):
