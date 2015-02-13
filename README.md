@@ -73,18 +73,18 @@ The following JSON example shows all the specifications that can be defined with
         "make"
       ]
     },
-    "radare": {
+    "nmap": {
       "type": "archive",
-      "url": "https://github.com/radare/radare2/archive/master.zip",
-      "path": "re/radare",
+      "url": "https://nmap.org/dist/nmap-6.47.tar.bz2",
+      "path": "network/nmap",
       "build": [
-        "bash configure",
-        "chmod +x configure-plugins",
+        "./configure",
         "make"
       ]
     }
   }
 }
+
 
 ```
 
