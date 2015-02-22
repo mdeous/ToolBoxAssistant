@@ -30,5 +30,5 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=True,
-    scripts=[os.path.join(CURRENT_DIR, 'ToolBoxAssistant', 'bin', 'tba')]
+    scripts=[os.path.join('.', 'ToolBoxAssistant', 'bin', 'tba')]
 )
