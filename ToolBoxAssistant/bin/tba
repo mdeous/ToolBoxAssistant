@@ -76,24 +76,16 @@ class ToolBoxAssistant(object):
         Synchronizes installed application with the specfile:
             - Installs applications found.
         """
+        # TODO: also check for missing applications (not installed or not in specfile)
         rootpath = self.specs['path']
         for app_name in self.specs['apps']:
             app_specs = self.specs['apps'][app_name]
             if not app_specs['path'].startswith(os.path.sep):
                 app_specs['path'] = os.path.join(rootpath, app_specs['path'])
-            app = AppFactory.load(tba, app_name, app_specs)
+            app = AppFactory.load(self, app_name, app_specs)
             app.sync()
             if app.is_updated:
                 app.build()
-
-    def do_check(self):
-        """
-        Checks applications status:
-            - Applications in specfile but not installed
-            - Applications installed but not in specfile
-        Prompts for action for each unsynced application found.
-        """
-        raise NotImplementedError
 
     def do_genspec(self):
         """
@@ -109,7 +101,7 @@ class ToolBoxAssistant(object):
         parser = ArgumentParser(description='Easily manage your toolbox applications.')
         parser.add_argument(
             'action',
-            choices=['sync', 'check', 'genspec']
+            choices=['sync', 'genspec']  # TODO: use subparsers to allow commands args to be passed
         )
         parser.add_argument(
             '-d', '--debug',

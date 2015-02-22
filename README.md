@@ -21,7 +21,7 @@ NOT YET
 
 ```
 $ tba -h
-usage: tba [-h] [-d] [-f FILE] {sync,check,genspec}
+usage: tba [-h] [-d] [-f FILE] {sync,genspec}
 
 Easily manage your toolbox applications.
 
@@ -38,10 +38,6 @@ optional arguments:
 
 Reads the specifications file, and automatically install listed applications. Already installed applications
 are updated if they are versionned.
-
-### check
-
-NOT IMPLEMENTED YET
 
 ### genspec
 
