@@ -24,23 +24,27 @@ class App(object):
         self.build_commands = specs.get('build')
         self.is_updated = False
 
-    def _log_exception(self, message):
+    def _log_output(self, message, logtype='error'):
         message = message if message else 'an unknown error occured'
+        method = getattr(self.tba.log, logtype, 'error')
+        # message can be an Exception object, convert it to string first
         for line in str(message).splitlines():
-            self.tba.log.error(line)
+            method(line)
 
     def _run_command(self, cmd):
         cmd = shlex.split(cmd)
         p = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
-        if self.tba.debug:
-            for line in stdout.splitlines():
-                self.tba.log.debug(line)
+        # display STDOUT content
+        if self.tba.debug and stdout:
+            self._log_output(stdout, logtype='debug')
+        # display an error (STDERR or generic message) if returncode is non-zero
         if p.returncode != 0:
-            self._log_exception(stderr)
+            self._log_output(stderr)
             return False
-        if stderr:
-            self._log_exception(stderr)  # TODO: display this as WARNING, not ERROR
+        # display STDERR content if debug is enabled
+        if self.tba.debug and stderr:
+            self._log_output(stderr, logtype='warning')  # TODO: display this as WARNING, not ERROR
         return True
 
     def sync(self):
@@ -110,7 +114,7 @@ class ArchiveApp(App):
         try:
             data = opener.read()
         except Exception as err:
-            self._log_exception(err)
+            self._log_output(err)
             return False
         with open(temppath, 'wb') as ofile:
             ofile.write(data)
