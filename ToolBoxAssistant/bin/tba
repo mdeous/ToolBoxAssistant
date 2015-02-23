@@ -23,7 +23,7 @@ try:
 except ImportError:
     import json
 
-from ToolBoxAssistant.app import AppFactory, VersionedApp
+from ToolBoxAssistant.app import AppFactory
 from ToolBoxAssistant.log import get_logger
 
 
