@@ -74,9 +74,7 @@ class ToolBoxAssistant(object):
     def do_sync(self):
         """
         Synchronizes installed application with the specfile:
-            - Installs applications found.
         """
-        # TODO: also check for missing applications (not installed or not in specfile)
         rootpath = self.specs['path']
         for app_name in self.specs['apps']:
             app_specs = self.specs['apps'][app_name]
@@ -100,20 +98,27 @@ class ToolBoxAssistant(object):
         """
         parser = ArgumentParser(description='Easily manage your toolbox applications.')
         parser.add_argument(
-            'action',
-            choices=['sync', 'genspec']  # TODO: use subparsers to allow commands args to be passed
-        )
-        parser.add_argument(
-            '-d', '--debug',
-            help='display external commands output',
-            action='store_true',
-            default=False
-        )
-        parser.add_argument(
             '-f', '--file',
-            help='toolbox specifications file to use',
-            metavar='FILE',
+            help='toolbox specfile to use (default: toolbox.json)',
             default='toolbox.json'
+        )
+        subparsers = parser.add_subparsers(
+            title='Subcommands',
+            help='(use "%(prog)s <cmd> -h" for commands help)'
+        )
+
+        sync_parser = subparsers.add_parser('sync', help='synchronize installed applications with specfile')
+        sync_parser.add_argument(
+            '-u', '--unlisted',
+            help='list installed applications missing from specfile (NOT IMPLEMENTED YET)',
+            action='store_true'
+        )
+
+        genspec_parser = subparsers.add_parser('genspec', help='generate specfile from installed applications (NOT IMPLEMENTED YET)')
+        genspec_parser.add_argument(
+            '-m', '--merge',
+            help='merge found applications with existing specfile',
+            metavar='FILE'
         )
         args = parser.parse_args()
         if not args.file.startswith(os.path.sep):
@@ -123,7 +128,7 @@ class ToolBoxAssistant(object):
             return
         self.setup_config_dir()
         self.debug = args.debug
-        method_name = 'do_%s' % args.action
+        method_name = 'do_%s' % args.actions
         getattr(self, method_name)()
 
 
