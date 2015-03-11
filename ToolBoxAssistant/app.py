@@ -36,15 +36,15 @@ class App(object):
         p = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         # display STDOUT content
-        if self.tba.debug and stdout:
+        if self.tba.args.verbose and stdout:
             self._log_output(stdout, logtype='debug')
         # display an error (STDERR or generic message) if returncode is non-zero
         if p.returncode != 0:
             self._log_output(stderr)
             return False
         # display STDERR content if debug is enabled
-        if self.tba.debug and stderr:
-            self._log_output(stderr, logtype='warning')  # TODO: display this as WARNING, not ERROR
+        if self.tba.args.verbose and stderr:
+            self._log_output(stderr, logtype='warning')
         return True
 
     def sync(self):

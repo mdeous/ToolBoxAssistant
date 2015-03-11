@@ -39,7 +39,7 @@ class ToolBoxAssistant(object):
         self.log = get_logger('tba')
         self.specs = None
         self.config_dir = None
-        self.debug = False
+        self.args = None
 
     def setup_config_dir(self):
         self.config_dir = os.path.join(
@@ -113,8 +113,16 @@ class ToolBoxAssistant(object):
             help='list installed applications missing from specfile (NOT IMPLEMENTED YET)',
             action='store_true'
         )
+        sync_parser.add_argument(
+            '-v', '--verbose',
+            help='display external commands output',
+            action='store_true'
+        )
 
-        genspec_parser = subparsers.add_parser('genspec', help='generate specfile from installed applications (NOT IMPLEMENTED YET)')
+        genspec_parser = subparsers.add_parser(
+            'genspec',
+            help='generate specfile from installed applications (NOT IMPLEMENTED YET)'
+        )
         genspec_parser.add_argument(
             '-m', '--merge',
             help='merge found applications with existing specfile',
@@ -126,8 +134,8 @@ class ToolBoxAssistant(object):
         specs_ok = self.load_specs(args.file)
         if not specs_ok:
             return
+        self.args = args
         self.setup_config_dir()
-        self.debug = args.debug
         method_name = 'do_%s' % args.actions
         getattr(self, method_name)()
 
