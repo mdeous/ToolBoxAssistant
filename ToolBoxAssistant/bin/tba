@@ -41,6 +41,14 @@ class ToolBoxAssistant(object):
         self.config_dir = None
         self.args = None
 
+    @staticmethod
+    def find_versionned_folders(path):
+        for root, subdirs, files in os.walk(path):
+            for cvsdir in ('.git', '.svn', '.hg'):
+                if cvsdir in subdirs:
+                    yield root
+                    break
+
     def setup_config_dir(self):
         self.config_dir = os.path.join(
             self.config_basedir,
@@ -84,6 +92,10 @@ class ToolBoxAssistant(object):
             app.sync()
             if app.is_updated:
                 app.build()
+        if self.args.unlisted:
+            for folder in self.find_versionned_folders(rootpath):
+                folder, app_name = os.path.split(folder)
+                self.log.warn('found unlisted application in %s: %s' % (folder, app_name))
 
     def do_genspec(self):
         """
@@ -104,13 +116,14 @@ class ToolBoxAssistant(object):
         )
         subparsers = parser.add_subparsers(
             title='Subcommands',
-            help='(use "%(prog)s <cmd> -h" for commands help)'
+            help='(use "%(prog)s <cmd> -h" for commands help)',
+            dest='action'
         )
 
         sync_parser = subparsers.add_parser('sync', help='synchronize installed applications with specfile')
         sync_parser.add_argument(
             '-u', '--unlisted',
-            help='list installed applications missing from specfile (NOT IMPLEMENTED YET)',
+            help='list installed applications missing from specfile',
             action='store_true'
         )
         sync_parser.add_argument(
@@ -136,7 +149,7 @@ class ToolBoxAssistant(object):
             return
         self.args = args
         self.setup_config_dir()
-        method_name = 'do_%s' % args.actions
+        method_name = 'do_%s' % args.action
         getattr(self, method_name)()
 
 
