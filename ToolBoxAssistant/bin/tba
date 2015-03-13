@@ -76,7 +76,7 @@ class ToolBoxAssistant(object):
 
     def do_sync(self):
         """
-        Synchronizes installed application with the specfile:
+        Synchronizes installed application with the specfile.
         """
         if (not os.path.exists(self.args.file)) or (not os.path.isfile(self.args.file)):
             self.log.error('File not found: %s' % self.args.file)
