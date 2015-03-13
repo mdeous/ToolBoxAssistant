@@ -7,7 +7,7 @@ from tempfile import gettempdir
 from urllib2 import urlopen
 from zipfile import ZipFile
 
-from helpers import unnest_dir, chdir
+from helpers import unnest_dir, chdir, Color
 
 
 class App(object):
@@ -50,10 +50,10 @@ class App(object):
     def sync(self):
         op_ok = False
         if not os.path.exists(self.path):
-            self.tba.log.info('downloading %s' % self.name)
+            self.tba.log.info('downloading %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
             op_ok = self.download()
         else:
-            self.tba.log.info('updating %s' % self.name)
+            self.tba.log.info('updating %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
             op_ok = self.update()
         if op_ok:
             unnest_dir(self.path)
@@ -61,7 +61,7 @@ class App(object):
     def build(self):
         if self.build_commands is None:
             return True
-        self.tba.log.info('building %s' % self.name)
+        self.tba.log.info('building %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
         op_ok = False
         with chdir(self.path):
             for cmd in self.build_commands:
@@ -124,7 +124,7 @@ class ArchiveApp(App):
                 handler = self.archive_handlers[extension]
                 break
         if handler is None:
-            self.tba.log.error('unsupported archive for application %s' % self.name)
+            self.tba.log.error('unsupported archive for application %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
             return False
         mode = 'r'
         archive_type = fname.split('.')[-1]
@@ -162,14 +162,14 @@ class VersionedApp(App):
 
     def download(self):
         if self.app_type not in self.download_commands:
-            self.tba.log.error('unsupported VCS for application %s' % self.name)
+            self.tba.log.error('unsupported VCS for application %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
             return False
         cmd = self.download_commands[self.app_type] % (self.url, self.path)
         return self._run_command(cmd)
 
     def update(self):
         if self.app_type not in self.update_commands:
-            self.tba.log.error('unsupported VCS for application %s' % self.name)
+            self.tba.log.error('unsupported VCS for application %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
             return False
         op_ok = False
         with chdir(self.path):
