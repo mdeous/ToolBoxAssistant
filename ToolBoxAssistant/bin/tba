@@ -37,7 +37,6 @@ class ToolBoxAssistant(object):
 
     def __init__(self):
         self.log = get_logger('tba')
-        self.specs = None
         self.config_dir = None
         self.args = None
 
@@ -66,15 +65,14 @@ class ToolBoxAssistant(object):
         for field in self.tba_required_fields:
             if field not in data:
                 self.log.error('missing top-level field in specs: %s' % field)
-                return False
+                return None
         for app_name in data['apps']:
             app_specs = data['apps'][app_name]
             for app_field in self.app_required_fields:
                 if app_field not in app_specs:
                     self.log.error('missing app field in specs: %s' % app_field)
-                    return False
-        self.specs = data
-        return True
+                    return None
+        return data
 
     def do_sync(self):
         """
@@ -83,13 +81,13 @@ class ToolBoxAssistant(object):
         if (not os.path.exists(self.args.file)) or (not os.path.isfile(self.args.file)):
             self.log.error('File not found: %s' % self.args.file)
             return
-        specs_ok = self.load_specs(self.args.file)
-        if not specs_ok:
+        specs = self.load_specs(self.args.file)
+        if specs is None:
             return
-        self.setup_config_dir(self.specs['path'])
-        rootpath = self.specs['path']
-        for app_name in self.specs['apps']:
-            app_specs = self.specs['apps'][app_name]
+        self.setup_config_dir(specs['path'])
+        rootpath = specs['path']
+        for app_name in specs['apps']:
+            app_specs = specs['apps'][app_name]
             if not app_specs['path'].startswith(os.path.sep):
                 app_specs['path'] = os.path.join(rootpath, app_specs['path'])
             app = AppFactory.load(self, app_name, app_specs)
