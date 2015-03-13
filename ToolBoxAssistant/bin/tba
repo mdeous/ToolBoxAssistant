@@ -32,7 +32,7 @@ class ToolBoxAssistant(object):
     The main class
     """
     config_basedir = os.path.join(os.path.expanduser('~'), '.tba')
-    required_fields = ['path', 'apps']
+    tba_required_fields = ['path', 'apps']
     app_required_fields = ['type', 'url', 'path']
 
     def __init__(self):
@@ -49,10 +49,10 @@ class ToolBoxAssistant(object):
                     yield root
                     break
 
-    def setup_config_dir(self):
+    def setup_config_dir(self, path):
         self.config_dir = os.path.join(
             self.config_basedir,
-            self.specs['path'].replace(os.path.sep, '_').strip('_')
+            path.replace(os.path.sep, '_').strip('_')
         )
         if not os.path.exists(self.config_dir):
             os.makedirs(self.config_dir)
@@ -61,12 +61,9 @@ class ToolBoxAssistant(object):
         """
         Loads a specifications file and checks for missing fields.
         """
-        if (not os.path.exists(fpath)) or (not os.path.isfile(fpath)):
-            self.log.error('File not found: %s' % fpath)
-            return False
         with open(fpath) as ifile:
             data = json.load(ifile)
-        for field in self.required_fields:
+        for field in self.tba_required_fields:
             if field not in data:
                 self.log.error('missing top-level field in specs: %s' % field)
                 return False
@@ -83,6 +80,13 @@ class ToolBoxAssistant(object):
         """
         Synchronizes installed application with the specfile:
         """
+        if (not os.path.exists(self.args.file)) or (not os.path.isfile(self.args.file)):
+            self.log.error('File not found: %s' % self.args.file)
+            return
+        specs_ok = self.load_specs(self.args.file)
+        if not specs_ok:
+            return
+        self.setup_config_dir(self.specs['path'])
         rootpath = self.specs['path']
         for app_name in self.specs['apps']:
             app_specs = self.specs['apps'][app_name]
@@ -120,7 +124,10 @@ class ToolBoxAssistant(object):
             dest='action'
         )
 
-        sync_parser = subparsers.add_parser('sync', help='synchronize installed applications with specfile')
+        sync_parser = subparsers.add_parser(
+            'sync',
+            help='synchronize installed applications with specfile'
+        )
         sync_parser.add_argument(
             '-u', '--unlisted',
             help='list installed applications missing from specfile',
@@ -131,26 +138,28 @@ class ToolBoxAssistant(object):
             help='display external commands output',
             action='store_true'
         )
+        sync_parser.set_defaults(func=self.do_sync)
 
         genspec_parser = subparsers.add_parser(
             'genspec',
             help='generate specfile from installed applications (NOT IMPLEMENTED YET)'
         )
         genspec_parser.add_argument(
+            'path',
+            help='toolbox folder to scan for applications'
+        )
+        genspec_parser.add_argument(
             '-m', '--merge',
             help='merge found applications with existing specfile',
             metavar='FILE'
         )
+        genspec_parser.set_defaults(func=self.do_genspec)
+
         args = parser.parse_args()
         if not args.file.startswith(os.path.sep):
             args.file = os.path.join(os.getcwd(), args.file)
-        specs_ok = self.load_specs(args.file)
-        if not specs_ok:
-            return
         self.args = args
-        self.setup_config_dir()
-        method_name = 'do_%s' % args.action
-        getattr(self, method_name)()
+        self.args.func()
 
 
 if __name__ == '__main__':
