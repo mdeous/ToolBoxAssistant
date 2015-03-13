@@ -129,6 +129,7 @@ class ToolBoxAssistant(object):
         with open(outfile, 'w') as ofile:
             json.dump(new_specs, ofile, sort_keys=True, indent=2, separators=(',', ': '))
         self.log.info('specfile written to %s' % outfile)
+        self.log.info('you may now add build information to the new specfile')
 
     def run(self):
         """
