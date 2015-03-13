@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import tempfile
+from subprocess import Popen, PIPE
 
 
 class chdir(object):
@@ -33,3 +34,34 @@ def unnest_dir(dirname):
     temp_dir = os.path.join(tempfile.gettempdir(), outer_content[0])
     os.renames(inner_dir, temp_dir)
     os.renames(temp_dir, dirname)
+
+
+def find_versionned_folders(path):
+    for root, subdirs, files in os.walk(path):
+        for cvsdir in ('.git', '.svn', '.hg'):
+            if cvsdir in subdirs:
+                yield cvsdir.strip('.'), root
+                break
+
+
+def get_svn_url(regex, path):
+    with chdir(path):
+        p = Popen('LANG=en svn info', stdout=PIPE, stderr=PIPE, shell=True)
+    svn_info, _ = p.communicate()
+    url = regex.search(svn_info).group(1)
+    return url
+
+
+def readfile(path):
+    with open(path) as ifile:
+        content = ifile.read()
+    return content
+
+
+def yes_no(q):
+    answer = None
+    while answer is None:
+        i = raw_input('%s [Y/n]' % q)
+        if i in ('', 'y', 'Y', 'n', 'N'):
+            answer = i
+    return answer in ('', 'y', 'Y')
