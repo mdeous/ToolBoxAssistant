@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from logging import Formatter, StreamHandler, getLogger, DEBUG
 
+from ToolBoxAssistant.helpers import Color
+
 LOG_FORMAT = '[%(levelname)s] %(message)s'
 
 
@@ -9,10 +11,10 @@ class ColorFormatter(Formatter):
     A logging formatter that displays the loglevel with colors.
     """
     _colors_map = {
-        'DEBUG': '\033[1;32m',
-        'INFO': '\033[1;34m',
-        'WARNING': '\033[0;31m',
-        'ERROR': '\033[1;31m',
+        'DEBUG': Color.GREENBOLD,
+        'INFO': Color.BLUEBOLD,
+        'WARNING': Color.RED,
+        'ERROR': Color.REDBOLD
     }
 
     def format(self, record):

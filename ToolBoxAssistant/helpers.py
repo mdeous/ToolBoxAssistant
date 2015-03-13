@@ -4,6 +4,14 @@ import tempfile
 from subprocess import Popen, PIPE
 
 
+class Color(object):
+    BLUEBOLD = '\033[1;34m'
+    GREENBOLD = '\033[1;32m'
+    REDBOLD = '\033[1;31m'
+    RED = '\033[0;31m'
+    END = '\033[0m'
+
+
 class chdir(object):
     """
     Context-manager that changes current directory on enter, and
