@@ -109,9 +109,11 @@ class ToolBoxAssistant(object):
         if args.merge is not None:
             new_specs = self.load_specs(args.merge)
         apps_specs = new_specs['apps']
+        new_apps_found = False
         for vcs_type, app_folder in find_versionned_folders(args.path):
             app_path = app_folder[len(args.path)+1:]
             if app_path not in [apps_specs[a]['path'] for a in apps_specs]:
+                new_apps_found = True
                 folder, app_name = os.path.split(app_folder)
                 logger.info('found%s application in %s: %s (%s)' % (
                     ' new' if args.merge is not None else '',
@@ -125,14 +127,16 @@ class ToolBoxAssistant(object):
                     'path': app_path,
                 }
                 apps_specs[app_name] = app_specs
-
-        outfile = args.merge or args.file
-        if os.path.exists(outfile):
-            logger.warning('file already exists: %s' % Color.GREEN+outfile+Color.END)
-            if not yes_no('Overwrite ?'):
-                logger.error('operation aborted by user')
-                return
-        with open(outfile, 'w') as ofile:
-            json.dump(new_specs, ofile, sort_keys=True, indent=2, separators=(',', ': '))
-        logger.info('specfile written to %s' % Color.GREEN+outfile+Color.END)
-        logger.info('you may now add build information to the new specfile')
+        if new_apps_found:
+            outfile = args.merge or args.file
+            if os.path.exists(outfile):
+                logger.warning('file already exists: %s' % Color.GREEN+outfile+Color.END)
+                if not yes_no('Overwrite ?'):
+                    logger.error('operation aborted by user')
+                    return
+            with open(outfile, 'w') as ofile:
+                json.dump(new_specs, ofile, sort_keys=True, indent=2, separators=(',', ': '))
+            logger.info('specfile written to %s' % Color.GREEN+outfile+Color.END)
+            logger.info('you may now add build information to the new specfile')
+        else:
+            logger.info('no new application found')
