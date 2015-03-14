@@ -1,6 +1,6 @@
 # ToolBoxAssistant
 
-An utility to easily manage your toolbox applications.
+A utility to easily manage your toolbox applications.
 
 ## Introduction
 
