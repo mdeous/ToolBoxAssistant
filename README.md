@@ -7,7 +7,7 @@ An utility to easily manage your toolbox applications.
 ToolBoxAssistant works by reading a JSON file containing the toolbox location and applications information.
 By default it searches for a `toolbox.json` in the current directory. It can install applications from a
 version control system (git / mercurial / subversion), or directly from an archive URL, and supports build
-directives if needed.                                                                                                                                                                                                                                                                                                                                                                                                           
+directives if needed.
 
 ## Installation
 
