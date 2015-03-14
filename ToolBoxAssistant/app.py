@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
-import shlex
 import tarfile
-from subprocess import Popen, PIPE
 from tempfile import gettempdir
 from urllib2 import urlopen
 from zipfile import ZipFile
 
-from helpers import unnest_dir, chdir, Color
+from ToolBoxAssistant.helpers import unnest_dir, chdir, run_command
+from ToolBoxAssistant.log import logger, log_to_file, Color
 
 
 class App(object):
@@ -24,36 +23,12 @@ class App(object):
         self.build_commands = specs.get('build')
         self.is_updated = False
 
-    def _log_output(self, message, logtype='error'):
-        message = message if message else 'an unknown error occured'
-        method = getattr(self.tba.log, logtype, 'error')
-        # message can be an Exception object, convert it to string first
-        for line in str(message).splitlines():
-            method(line)
-
-    def _run_command(self, cmd):
-        cmd = shlex.split(cmd)
-        p = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate()
-        # display STDOUT content
-        if self.tba.args.verbose and stdout:
-            self._log_output(stdout, logtype='debug')
-        # display an error (STDERR or generic message) if returncode is non-zero
-        if p.returncode != 0:
-            self._log_output(stderr)
-            return False
-        # display STDERR content if debug is enabled
-        if self.tba.args.verbose and stderr:
-            self._log_output(stderr, logtype='warning')
-        return True
-
     def sync(self):
-        op_ok = False
         if not os.path.exists(self.path):
-            self.tba.log.info('downloading %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
+            logger.info('downloading %s' % Color.GREEN+self.name+Color.END)
             op_ok = self.download()
         else:
-            self.tba.log.info('updating %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
+            logger.info('updating %s' % Color.GREEN+self.name+Color.END)
             op_ok = self.update()
         if op_ok:
             unnest_dir(self.path)
@@ -61,11 +36,11 @@ class App(object):
     def build(self):
         if self.build_commands is None:
             return True
-        self.tba.log.info('building %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
+        logger.info('building %s' % Color.GREEN+self.name+Color.END)
         op_ok = False
         with chdir(self.path):
             for cmd in self.build_commands:
-                op_ok = self._run_command(cmd)
+                op_ok = run_command(cmd)
                 if not op_ok:
                     break
         return op_ok
@@ -90,14 +65,26 @@ class ArchiveApp(App):
 
     def read_version(self):
         version_file = os.path.join(self.tba.config_dir, self.name)
+        logger.debug('reading version for %s from %s' % (
+            Color.GREEN+self.name+Color.END,
+            Color.GREEN+version_file+Color.END
+        ))
         if not os.path.exists(version_file):
             return None
         with open(version_file) as ifile:
             version = ifile.read().strip()
+        logger.debug('version for %s is %s' % (
+            Color.GREEN+self.name+Color.END,
+            Color.GREEN+version+Color.END
+        ))
         return version
 
     def store_version(self):
         version_file = os.path.join(self.tba.config_dir, self.name)
+        logger.debug('writing version for %s to %s' % (
+            Color.GREEN+self.name+Color.END,
+            Color.GREEN+version_file+Color.END
+        ))
         with open(version_file, 'w') as ofile:
             ofile.write(self.url.split('/')[-1].split('?')[0])
 
@@ -114,7 +101,8 @@ class ArchiveApp(App):
         try:
             data = opener.read()
         except Exception as err:
-            self._log_output(err)
+            log_to_file(str(err))
+            # self._log_output(err)
             return False
         with open(temppath, 'wb') as ofile:
             ofile.write(data)
@@ -124,7 +112,7 @@ class ArchiveApp(App):
                 handler = self.archive_handlers[extension]
                 break
         if handler is None:
-            self.tba.log.error('unsupported archive for application %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
+            logger.error('unsupported archive for application %s' % Color.GREEN+self.name+Color.END)
             return False
         mode = 'r'
         archive_type = fname.split('.')[-1]
@@ -162,20 +150,20 @@ class VersionedApp(App):
 
     def download(self):
         if self.app_type not in self.download_commands:
-            self.tba.log.error('unsupported VCS for application %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
+            logger.error('unsupported VCS for application %s' % Color.GREEN+self.name+Color.END)
             return False
         cmd = self.download_commands[self.app_type] % (self.url, self.path)
-        return self._run_command(cmd)
+        return run_command(cmd)
 
     def update(self):
         if self.app_type not in self.update_commands:
-            self.tba.log.error('unsupported VCS for application %s%s%s' % (Color.GREENBOLD, self.name, Color.END))
+            logger.error('unsupported VCS for application %s' % Color.GREEN+self.name+Color.END)
             return False
         op_ok = False
         with chdir(self.path):
             cmds = self.update_commands[self.app_type]
             for cmd in cmds:
-                op_ok = self._run_command(cmd)
+                op_ok = run_command(cmd)
                 if not op_ok:
                     break
         self.is_updated = op_ok  # TODO: check if some changes have been pulled

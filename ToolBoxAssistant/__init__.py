@@ -2,6 +2,7 @@
 import os
 import re
 from argparse import ArgumentParser
+from logging import DEBUG, INFO
 try:
     import simplejson as json
 except ImportError:
@@ -9,7 +10,7 @@ except ImportError:
 
 from ToolBoxAssistant.app import AppFactory
 from ToolBoxAssistant.helpers import get_svn_url, readfile, find_versionned_folders, yes_no, Color
-from ToolBoxAssistant.log import get_logger
+from ToolBoxAssistant.log import logger
 
 VERSION = '0.1'
 
@@ -40,7 +41,6 @@ class ToolBoxAssistant(object):
     }
 
     def __init__(self):
-        self.log = get_logger('tba')
         self.config_dir = None
         self.args = None
 
@@ -50,6 +50,7 @@ class ToolBoxAssistant(object):
             path.replace(os.path.sep, '_').strip('_')
         )
         if not os.path.exists(self.config_dir):
+            logger.debug('creating configuration folder: %s' % Color.GREEN+self.config_dir+Color.END)
             os.makedirs(self.config_dir)
 
     def load_specs(self, fpath):
@@ -57,16 +58,17 @@ class ToolBoxAssistant(object):
         Loads a specifications file and checks for missing fields.
         """
         with open(fpath) as ifile:
+            logger.debug('loading specfile: %s' % Color.GREEN+fpath+Color.END)
             data = json.load(ifile)
         for field in self.tba_required_fields:
             if field not in data:
-                self.log.error('missing top-level field in specs: %s%s%s' % (Color.GREENBOLD, field, Color.END))
+                logger.error('missing top-level field in specs: %s' % Color.GREEN+field+Color.END)
                 return None
         for app_name in data['apps']:
             app_specs = data['apps'][app_name]
             for app_field in self.app_required_fields:
                 if app_field not in app_specs:
-                    self.log.error('missing app field in specs: %s%s%s' % (Color.GREENBOLD, app_field, Color.END))
+                    logger.error('missing app field in specs: %s' % Color.GREEN+app_field+Color.END)
                     return None
         return data
 
@@ -75,7 +77,7 @@ class ToolBoxAssistant(object):
         Synchronizes installed application with the specfile.
         """
         if (not os.path.exists(self.args.file)) or (not os.path.isfile(self.args.file)):
-            self.log.error('File not found: %s%s%s' % (Color.GREENBOLD, self.args.file, Color.END))
+            logger.error('file not found: %s' % Color.GREEN+self.args.file+Color.END)
             return
         specs = self.load_specs(self.args.file)
         if specs is None:
@@ -93,8 +95,8 @@ class ToolBoxAssistant(object):
         if self.args.unlisted:
             for _, folder in find_versionned_folders(rootpath):
                 folder, app_name = os.path.split(folder)
-                self.log.warn('found unlisted application in %s: %s%s%s' % (
-                    folder, Color.GREENBOLD, app_name, Color.END
+                logger.warn('found unlisted application in %s: %s' % (
+                    folder, Color.GREEN+app_name+Color.END
                 ))
 
     def do_genspec(self):
@@ -111,29 +113,32 @@ class ToolBoxAssistant(object):
             new_specs = self.load_specs(self.args.merge)
         apps_specs = new_specs['apps']
         for vcs_type, app_folder in find_versionned_folders(self.args.path):
-            folder, app_name = os.path.split(app_folder)
-            self.log.info('found application in %s: %s%s%s (%s)' % (
-                folder, Color.GREENBOLD, app_name, Color.END, vcs_type
-            ))
-            cfg_file, regex, handler = self.vcs_repo_finders[vcs_type]
-            cfg_path = os.path.join(app_folder, cfg_file)
-            app_specs = {
-                'type': vcs_type,
-                'url': handler(regex, cfg_path),
-                'path': app_folder[len(self.args.path)+1:],
-            }
-            apps_specs[app_name] = app_specs
+            app_path = app_folder[len(self.args.path)+1:]
+            if app_path not in [apps_specs[a]['path'] for a in apps_specs]:
+                folder, app_name = os.path.split(app_folder)
+                logger.info('found%s application in %s: %s (%s)' % (
+                    ' new' if self.args.merge is not None else '',
+                    folder, Color.GREEN+app_name+Color.END, vcs_type
+                ))
+                cfg_file, regex, handler = self.vcs_repo_finders[vcs_type]
+                cfg_path = os.path.join(app_folder, cfg_file)
+                app_specs = {
+                    'type': vcs_type,
+                    'url': handler(regex, cfg_path),
+                    'path': app_path,
+                }
+                apps_specs[app_name] = app_specs
 
         outfile = self.args.merge or self.args.file
         if os.path.exists(outfile):
-            self.log.warning('file already exists: %s%s%s' % (Color.GREENBOLD, outfile, Color.END))
+            logger.warning('file already exists: %s' % Color.GREEN+outfile+Color.END)
             if not yes_no('Overwrite ?'):
-                self.log.error('operation aborted by user')
+                logger.error('operation aborted by user')
                 return
         with open(outfile, 'w') as ofile:
             json.dump(new_specs, ofile, sort_keys=True, indent=2, separators=(',', ': '))
-        self.log.info('specfile written to %s%s%s' % (Color.GREENBOLD, outfile, Color.END))
-        self.log.info('you may now add build information to the new specfile')
+        logger.info('specfile written to %s' % Color.GREEN+outfile+Color.END)
+        logger.info('you may now add build information to the new specfile')
 
     def run(self):
         """
@@ -144,6 +149,11 @@ class ToolBoxAssistant(object):
             '-f', '--file',
             help='toolbox specfile to use (default: toolbox.json)',
             default='toolbox.json'
+        )
+        parser.add_argument(
+            '-v', '--verbose',
+            help='display debug information',
+            action='store_true'
         )
         subparsers = parser.add_subparsers(
             title='Subcommands',
@@ -158,11 +168,6 @@ class ToolBoxAssistant(object):
         sync_parser.add_argument(
             '-u', '--unlisted',
             help='list installed applications missing from specfile',
-            action='store_true'
-        )
-        sync_parser.add_argument(
-            '-v', '--verbose',
-            help='display external commands output',
             action='store_true'
         )
         sync_parser.set_defaults(func=self.do_sync)
@@ -185,5 +190,6 @@ class ToolBoxAssistant(object):
         args = parser.parse_args()
         if not args.file.startswith(os.path.sep):
             args.file = os.path.join(os.getcwd(), args.file)
+        logger.setLevel(DEBUG if args.verbose else INFO)
         self.args = args
         self.args.func()

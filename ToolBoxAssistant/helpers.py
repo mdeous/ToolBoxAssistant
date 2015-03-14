@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
+import shlex
 import tempfile
 from subprocess import Popen, PIPE
 
-
-class Color(object):
-    BLUEBOLD = '\033[1;34m'
-    GREENBOLD = '\033[1;32m'
-    REDBOLD = '\033[1;31m'
-    RED = '\033[0;31m'
-    END = '\033[0m'
+from ToolBoxAssistant.log import logger, log_to_file, Color
 
 
 class chdir(object):
@@ -53,9 +48,13 @@ def find_versionned_folders(path):
 
 
 def get_svn_url(regex, path):
+    cmd = 'LANG=en svn info'
+    logger.debug('running external command: %s' % Color.GREEN+cmd+Color.END)
     with chdir(path):
-        p = Popen('LANG=en svn info', stdout=PIPE, stderr=PIPE, shell=True)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     svn_info, _ = p.communicate()
+    for line in svn_info.splitlines():
+        logger.debug(Color.BLUE+line+Color.END)
     url = regex.search(svn_info).group(1)
     return url
 
@@ -73,3 +72,20 @@ def yes_no(q):
         if i in ('', 'y', 'Y', 'n', 'N'):
             answer = i
     return answer in ('', 'y', 'Y')
+
+
+def run_command(cmd):
+    logger.debug('running external command: %s' % Color.GREEN + cmd + Color.END)
+    cmd = shlex.split(cmd)
+    p = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate()
+    # display STDOUT content
+    if stdout:
+        for line in stdout.splitlines():
+            logger.debug(Color.BLUE+line+Color.END)
+    # display an error (STDERR or generic message) if returncode is non-zero
+    if p.returncode != 0:
+        tmpname = log_to_file(stderr)
+        logger.error('an error occured, see %s for more details' % (Color.GREEN+tmpname+Color.END))
+        return False
+    return True
