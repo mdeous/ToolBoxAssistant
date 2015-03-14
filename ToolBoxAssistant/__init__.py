@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-from argparse import ArgumentParser
-from logging import DEBUG, INFO
 try:
     import simplejson as json
 except ImportError:
