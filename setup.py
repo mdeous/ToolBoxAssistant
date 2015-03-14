@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import os.path
@@ -5,14 +6,12 @@ from setuptools import setup, find_packages
 
 from ToolBoxAssistant import VERSION
 
-CURRENT_DIR = os.path.realpath(os.path.dirname(__file__))
-
 
 setup(
     name='ToolBoxAssistant',
     version=VERSION,
     description='An utility to easily manage your toolbox applications',
-    long_description=open(os.path.join(CURRENT_DIR, 'README.md')).read(),
+    long_description=open(os.path.join(os.path.realpath(os.path.dirname(__file__)), 'README.md')).read(),
     author='Mathieu D. (MatToufoutu)',
     author_email='mattoufootu+code@gmail.com',
     url='https://github.com/mattoufoutu/ToolBoxAssistant',

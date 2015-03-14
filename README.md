@@ -17,7 +17,7 @@ directives if needed.
 
 ### From PyPI
 
-NOT YET
+    pip install ToolBoxAssistant
 
 ## Usage
 
