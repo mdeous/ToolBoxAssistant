@@ -16,9 +16,59 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+import os
+from argparse import ArgumentParser
+from logging import DEBUG, INFO
+
 from ToolBoxAssistant import ToolBoxAssistant
+from ToolBoxAssistant.log import logger
 
 
-if __name__ == '__main__':
-    tba = ToolBoxAssistant()
-    tba.run()
+tba = ToolBoxAssistant()
+parser = ArgumentParser(description='Easily manage your toolbox applications.')
+parser.add_argument(
+    '-f', '--file',
+    help='toolbox specfile to use (default: toolbox.json)',
+    default='toolbox.json'
+)
+parser.add_argument(
+    '-v', '--verbose',
+    help='display debug information',
+    action='store_true'
+)
+subparsers = parser.add_subparsers(
+    title='Subcommands',
+    help='(use "%(prog)s <cmd> -h" for commands help)',
+    dest='action'
+)
+
+sync_parser = subparsers.add_parser(
+    'sync',
+    help='synchronize installed applications with specfile'
+)
+sync_parser.add_argument(
+    '-u', '--unlisted',
+    help='list installed applications missing from specfile',
+    action='store_true'
+)
+sync_parser.set_defaults(func=tba.do_sync)
+
+genspec_parser = subparsers.add_parser(
+    'genspec',
+    help='generate specfile from installed applications'
+)
+genspec_parser.add_argument(
+    'path',
+    help='toolbox folder to scan for applications'
+)
+genspec_parser.add_argument(
+    '-m', '--merge',
+    help='merge found applications with existing specfile',
+    metavar='FILE'
+)
+genspec_parser.set_defaults(func=tba.do_genspec)
+args = parser.parse_args()
+if not args.file.startswith(os.path.sep):
+    args.file = os.path.join(os.getcwd(), args.file)
+logger.setLevel(DEBUG if args.verbose else INFO)
+args.func(args)

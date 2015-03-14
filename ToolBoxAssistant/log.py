@@ -29,7 +29,7 @@ class ColorFormatter(Formatter):
 
     def format(self, record):
         if record.levelname in self._colors_map:
-            record.levelname = '%s%s%sm' % (
+            record.levelname = '%s%s%s' % (
                 self._colors_map[record.levelname],
                 record.levelname,
                 Color.END

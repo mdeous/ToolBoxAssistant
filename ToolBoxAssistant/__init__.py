@@ -42,7 +42,6 @@ class ToolBoxAssistant(object):
 
     def __init__(self):
         self.config_dir = None
-        self.args = None
 
     def setup_config_dir(self, path):
         self.config_dir = os.path.join(
@@ -72,14 +71,14 @@ class ToolBoxAssistant(object):
                     return None
         return data
 
-    def do_sync(self):
+    def do_sync(self, args):
         """
         Synchronizes installed application with the specfile.
         """
-        if (not os.path.exists(self.args.file)) or (not os.path.isfile(self.args.file)):
-            logger.error('file not found: %s' % Color.GREEN+self.args.file+Color.END)
+        if (not os.path.exists(args.file)) or (not os.path.isfile(args.file)):
+            logger.error('file not found: %s' % Color.GREEN+args.file+Color.END)
             return
-        specs = self.load_specs(self.args.file)
+        specs = self.load_specs(args.file)
         if specs is None:
             return
         self.setup_config_dir(specs['path'])
@@ -92,32 +91,32 @@ class ToolBoxAssistant(object):
             app.sync()
             if app.is_updated:
                 app.build()
-        if self.args.unlisted:
+        if args.unlisted:
             for _, folder in find_versionned_folders(rootpath):
                 folder, app_name = os.path.split(folder)
                 logger.warn('found unlisted application in %s: %s' % (
                     folder, Color.GREEN+app_name+Color.END
                 ))
 
-    def do_genspec(self):
+    def do_genspec(self, args):
         """
         Scans current folder for versionned applications and
         creates a specfile accordingly.
         """
-        self.setup_config_dir(self.args.path)
+        self.setup_config_dir(args.path)
         new_specs = {
-            'path': self.args.path,
+            'path': args.path,
             'apps': {}
         }
-        if self.args.merge is not None:
-            new_specs = self.load_specs(self.args.merge)
+        if args.merge is not None:
+            new_specs = self.load_specs(args.merge)
         apps_specs = new_specs['apps']
-        for vcs_type, app_folder in find_versionned_folders(self.args.path):
-            app_path = app_folder[len(self.args.path)+1:]
+        for vcs_type, app_folder in find_versionned_folders(args.path):
+            app_path = app_folder[len(args.path)+1:]
             if app_path not in [apps_specs[a]['path'] for a in apps_specs]:
                 folder, app_name = os.path.split(app_folder)
                 logger.info('found%s application in %s: %s (%s)' % (
-                    ' new' if self.args.merge is not None else '',
+                    ' new' if args.merge is not None else '',
                     folder, Color.GREEN+app_name+Color.END, vcs_type
                 ))
                 cfg_file, regex, handler = self.vcs_repo_finders[vcs_type]
@@ -129,7 +128,7 @@ class ToolBoxAssistant(object):
                 }
                 apps_specs[app_name] = app_specs
 
-        outfile = self.args.merge or self.args.file
+        outfile = args.merge or args.file
         if os.path.exists(outfile):
             logger.warning('file already exists: %s' % Color.GREEN+outfile+Color.END)
             if not yes_no('Overwrite ?'):
@@ -139,57 +138,3 @@ class ToolBoxAssistant(object):
             json.dump(new_specs, ofile, sort_keys=True, indent=2, separators=(',', ': '))
         logger.info('specfile written to %s' % Color.GREEN+outfile+Color.END)
         logger.info('you may now add build information to the new specfile')
-
-    def run(self):
-        """
-        Main entry-point.
-        """
-        parser = ArgumentParser(description='Easily manage your toolbox applications.')
-        parser.add_argument(
-            '-f', '--file',
-            help='toolbox specfile to use (default: toolbox.json)',
-            default='toolbox.json'
-        )
-        parser.add_argument(
-            '-v', '--verbose',
-            help='display debug information',
-            action='store_true'
-        )
-        subparsers = parser.add_subparsers(
-            title='Subcommands',
-            help='(use "%(prog)s <cmd> -h" for commands help)',
-            dest='action'
-        )
-
-        sync_parser = subparsers.add_parser(
-            'sync',
-            help='synchronize installed applications with specfile'
-        )
-        sync_parser.add_argument(
-            '-u', '--unlisted',
-            help='list installed applications missing from specfile',
-            action='store_true'
-        )
-        sync_parser.set_defaults(func=self.do_sync)
-
-        genspec_parser = subparsers.add_parser(
-            'genspec',
-            help='generate specfile from installed applications'
-        )
-        genspec_parser.add_argument(
-            'path',
-            help='toolbox folder to scan for applications'
-        )
-        genspec_parser.add_argument(
-            '-m', '--merge',
-            help='merge found applications with existing specfile',
-            metavar='FILE'
-        )
-        genspec_parser.set_defaults(func=self.do_genspec)
-
-        args = parser.parse_args()
-        if not args.file.startswith(os.path.sep):
-            args.file = os.path.join(os.getcwd(), args.file)
-        logger.setLevel(DEBUG if args.verbose else INFO)
-        self.args = args
-        self.args.func()
