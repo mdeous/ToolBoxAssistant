@@ -5,7 +5,9 @@ An utility to easily manage your toolbox applications.
 ## Introduction
 
 ToolBoxAssistant works by reading a JSON file containing the toolbox location and applications information.
-By default it searches for a `toolbox.json` in the current directory.
+By default it searches for a `toolbox.json` in the current directory. It can install applications from a
+version control system (git / mercurial / subversion), or directly from an archive URL, and supports build
+directives if needed.                                                                                                                                                                                                                                                                                                                                                                                                           
 
 ## Installation
 
@@ -19,29 +21,53 @@ NOT YET
 
 ## Usage
 
+
 ```
-$ tba -h
-usage: tba [-h] [-d] [-f FILE] {sync,genspec}
+usage: tba [-h] [-f FILE] [-v] {sync,genspec} ...
 
 Easily manage your toolbox applications.
 
-positional arguments:
-  {sync,check,genspec}
-
 optional arguments:
   -h, --help            show this help message and exit
-  -d, --debug           display external commands output
-  -f FILE, --file FILE  toolbox specifications file to use
+  -f FILE, --file FILE  toolbox specfile to use (default: toolbox.json)
+  -v, --verbose         display debug information
+
+Subcommands:
+  {sync,genspec}        (use "tba <cmd> -h" for commands help)
+    sync                synchronize installed applications with specfile
+    genspec             generate specfile from installed applications
 ```
 
 ### sync
 
-Reads the specifications file, and automatically install listed applications. Already installed applications
-are updated if they are versionned.
+Reads the specifications file, and automatically install listed applications, or updates them if they are already
+installed. If the `-u`/`--unlisted` option is used, a warning is issued if versionned applications are installed
+but not listed in the specfile.
+
+```
+usage: tba sync [-h] [-u]
+
+optional arguments:
+  -h, --help      show this help message and exit
+  -u, --unlisted  list installed applications missing from specfile
+```
 
 ### genspec
 
-NOT IMPLEMENTED YET
+Searches for versionned applications in given folder and generate a specfile. If the `-m`/`--merge` option is used,
+given file is updated.
+
+```
+usage: tba genspec [-h] [-m FILE] path
+
+positional arguments:
+  path                  toolbox folder to scan for applications
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -m FILE, --merge FILE
+                        merge found applications with existing specfile
+```
 
 ## The `toolbox.json` file
 
@@ -83,6 +109,11 @@ The following JSON example shows all the specifications that can be defined with
 
 
 ```
+
+## Bugs / Feature requests
+
+If you find any bug, or have any feature you would like to see implemented, feel free to fill a ticket in the
+issue tracker, or even better, fix/code it by yourself and do a pull-request.
 
 ## License
 
